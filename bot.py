@@ -1,17 +1,19 @@
 from telegram import Bot
 import os, logging
 
+logging.basicConfig(level=logging.INFO)
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 if not TELEGRAM_TOKEN:
     raise RuntimeError("TELEGRAM_BOT_TOKEN missing")
 
 bot_for_cleanup = Bot(TELEGRAM_TOKEN)
 try:
-    bot_for_cleanup.delete_webhook()
-    logging.info("Deleted existing webhook (if any).")
+    res = bot_for_cleanup.delete_webhook()
+    logging.info("delete_webhook result: %s", res)
+    print("Deleted existing webhook (if any).")
 except Exception as e:
     logging.warning("Webhook deletion failed (ok to ignore): %s", e)
-# continue normal bot setup below...
+    print("Webhook deletion attempted; check logs.")
 
 
 # bot.py
