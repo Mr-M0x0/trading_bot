@@ -1,5 +1,6 @@
 python-telegram-bot==20.3
-python-binance
-pandas
+ccxt==2.9.85
+pandas>=2.0
+numpy
 ta
 requests
