@@ -1,9 +1,8 @@
 import os
 import logging
 import ccxt
-import httpx
 import pandas as pd
-from telegram import Update, Bot
+from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 import asyncio
 
@@ -16,9 +15,10 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 BITGET_KEY = os.getenv("BITGET_API_KEY", "").strip()
 BITGET_SECRET = os.getenv("BITGET_API_SECRET", "").strip()
 BITGET_PASSPHRASE = os.getenv("BITGET_API_PASSPHRASE", "").strip()
+USER_ID = os.getenv("TELEGRAM_USER_ID", "").strip()
 
 if not TELEGRAM_TOKEN:
-    raise RuntimeError("TELEGRAM_BOT_TOKEN missing")
+    raise RuntimeError("❌ TELEGRAM_BOT_TOKEN missing")
 
 # ================= EXCHANGE =================
 exchange = ccxt.bitget({
@@ -33,16 +33,17 @@ def analyze_pair(symbol="BTC/USDT", timeframe="1h"):
     try:
         ohlcv = exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=100)
         df = pd.DataFrame(ohlcv, columns=["time","open","high","low","close","volume"])
-        df["rsi"] = df["close"].pct_change().rolling(14).mean()  # placeholder RSI
+        df["rsi"] = df["close"].pct_change().rolling(14).mean()  # simple RSI placeholder
         latest = df.iloc[-1]
+
         verdict = "WATCH"
         reasons = []
 
         if latest["rsi"] < -0.02:
-            verdict = "BUY"
+            verdict = "BUY ✅"
             reasons.append("RSI oversold")
         elif latest["rsi"] > 0.02:
-            verdict = "SELL"
+            verdict = "SELL ❌"
             reasons.append("RSI overbought")
         else:
             reasons.append("Neutral RSI")
@@ -55,11 +56,11 @@ Verdict: {verdict}
 Reasons: {", ".join(reasons)}
 """
     except Exception as e:
-        return f"Error analyzing {symbol}: {e}"
+        return f"⚠️ Error analyzing {symbol}: {e}"
 
-# ================= HANDLERS =================
+# ================= COMMAND HANDLERS =================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🤖 Welcome! Use /signal BTC/USDT or /top to get coin signals.")
+    await update.message.reply_text("🤖 Welcome! Use /signal BTC/USDT or /top to get market signals.")
 
 async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.args:
@@ -78,29 +79,25 @@ async def top(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ================= HOURLY PUSH =================
 async def hourly_push(context: ContextTypes.DEFAULT_TYPE):
-    chat_id = os.getenv("TELEGRAM_USER_ID")  # put your own user ID in env
-    if not chat_id:
+    if not USER_ID:
         logger.warning("No TELEGRAM_USER_ID set, skipping push.")
         return
     pairs = ["BTC/USDT","ETH/USDT","SOL/USDT"]
-    msgs = [f"⏰ Hourly Update:"]
+    msgs = ["⏰ Hourly Market Update:"]
     for p in pairs:
         msgs.append(analyze_pair(p))
-    await context.bot.send_message(chat_id=chat_id, text="\n".join(msgs))
+    await context.bot.send_message(chat_id=USER_ID, text="\n".join(msgs))
 
 # ================= MAIN =================
 def build_application():
     app = Application.builder().token(TELEGRAM_TOKEN).build()
-
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("signal", signal))
     app.add_handler(CommandHandler("top", top))
-
     return app
 
 async def main():
     app = build_application()
-    # hourly job every 60 min
     app.job_queue.run_repeating(hourly_push, interval=3600, first=60)
     await app.run_polling()
 
