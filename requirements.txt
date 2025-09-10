@@ -1,6 +1,4 @@
-python-telegram-bot==20.3
-ccxt>=4.0.0
-pandas>=2.0
-numpy
-ta
-requests
+python-telegram-bot[job-queue]==20.3
+ccxt
+httpx
+pandas
