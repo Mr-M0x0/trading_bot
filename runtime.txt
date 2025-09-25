@@ -1,1 +1,22 @@
-python-3.11.9
+# Telegram bot framework
+python-telegram-bot==20.6
+
+# Async HTTP client (for APIs, Binance, etc.)
+httpx==0.27.0
+aiohttp==3.9.5
+
+# For scheduling tasks
+APScheduler==3.10.4
+
+# Data handling
+pandas==2.2.2
+numpy==1.26.4
+
+# For technical analysis (TA indicators)
+ta==0.10.2
+
+# Logging / Debugging
+loguru==0.7.2
+
+# Environment variables
+python-dotenv==1.0.1
