@@ -1,4 +1,7 @@
 python-telegram-bot[job-queue]==20.3
-ccxt
+ccxt>=4.6.0
+pandas>=2.0
+numpy
+ta
 httpx
-pandas
+aiofiles
